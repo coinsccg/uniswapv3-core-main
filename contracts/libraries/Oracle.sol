@@ -10,13 +10,13 @@ pragma solidity >=0.5.0 <0.8.0;
 /// The most recent observation is available, independent of the length of the oracle array, by passing 0 to observe()
 library Oracle {
     struct Observation {
-        // the block timestamp of the observation
+        // 记录区块的时间戳
         uint32 blockTimestamp;
-        // the tick accumulator, i.e. tick * time elapsed since the pool was first initialized
+        // tick index的累积值
         int56 tickCumulative;
-        // the seconds per liquidity, i.e. seconds elapsed / max(1, liquidity) since the pool was first initialized
+        // 价格在区间范围内每单位流动性做市时长
         uint160 secondsPerLiquidityCumulativeX128;
-        // whether or not the observation is initialized
+        // 是否已经被初始化
         bool initialized;
     }
 
