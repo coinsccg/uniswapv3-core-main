@@ -15,24 +15,22 @@ library Tick {
 
     // info stored for each initialized individual tick
     struct Info {
-        // the total position liquidity that references this tick
+        // 流动性总量
         uint128 liquidityGross;
-        // amount of net liquidity added (subtracted) when tick is crossed from left to right (right to left),
+        // 流动性变化量
         int128 liquidityNet;
-        // fee growth per unit of liquidity on the _other_ side of this tick (relative to the current tick)
-        // only has relative meaning, not absolute — the value depends on when the tick is initialized
+        // 以 token0 收取的价格区间范围外的手续费总量
+        // 以 token1 收取的价格区间范围外的手续费总量
         uint256 feeGrowthOutside0X128;
         uint256 feeGrowthOutside1X128;
-        // the cumulative tick value on the other side of the tick
+        // 价格在价格区间范围外的tick index累加
         int56 tickCumulativeOutside;
-        // the seconds per unit of liquidity on the _other_ side of this tick (relative to the current tick)
-        // only has relative meaning, not absolute — the value depends on when the tick is initialized
+        // 用预言机的 secondsPerLiquidityCumulative 减去价格区间两边 tick 上的该变量，就是该区间内的每单位流动性的做市时长
+        // 使用该结果乘以你的流动性数量，得出你的流动性参与的做市时长，这个时长比上 1 的结果，就是你在该区间赚取的手续费比例
         uint160 secondsPerLiquidityOutsideX128;
-        // the seconds spent on the other side of the tick (relative to the current tick)
-        // only has relative meaning, not absolute — the value depends on when the tick is initialized
+        // 用池子创建以来的总时间减去价格区间两边tick上的该变量，就能得出该区间做市的总时长
         uint32 secondsOutside;
-        // true iff the tick is initialized, i.e. the value is exactly equivalent to the expression liquidityGross != 0
-        // these 8 bits are set to prevent fresh sstores when crossing newly initialized ticks
+        // 是否初始化
         bool initialized;
     }
 
