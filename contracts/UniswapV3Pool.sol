@@ -58,11 +58,11 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         uint160 sqrtPriceX96;
         // 当前价格刻度（价格对应的index）
         int24 tick;
-        // 观察数组的最近更新的索引
+        // 最新oracle在Oracle数组中的索引位置
         uint16 observationIndex;
-        // 当前正在存储的最大观察数
+        // 最新存储的Oracle数量
         uint16 observationCardinality;
-        // 下一个要存储的最大观察数，在observations.write中触发
+        // 下一次存储的oracle数量
         uint16 observationCardinalityNext;
         // 当前协议费用占取款时的掉期费用的百分比，表示为整数分母 (1/x)%
         uint8 feeProtocol;
