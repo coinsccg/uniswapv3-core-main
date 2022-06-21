@@ -608,8 +608,8 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         require(slot0Start.unlocked, 'LOK');
         require(
             zeroForOne
-                ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO // tick向做移动 价格下降
-                : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO, // tick向右移动 价格上升
+                ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO // tick向右移动 价格上升
+                : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO, // tick向左移动 价格下降
             'SPL'
         );
 
@@ -724,7 +724,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
                             cache.tickCumulative,
                             cache.blockTimestamp
                         );
-                    // 向左移动 价格下降  流动性的变化量设置为负数
+                    // 向右移动 价格上降  流动性的变化量设置为负数
                     if (zeroForOne) liquidityNet = -liquidityNet;
                     // 更新流动性
                     state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
@@ -779,7 +779,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
             : (state.amountCalculated, amountSpecified - state.amountSpecifiedRemaining); // 精确输出
 
         //  交换token0和token1
-        if (zeroForOne) { // tick向左移动 代表价格下降
+        if (zeroForOne) { // tick向右移动 代表价格上降 用token0换token1
             //向用户支付token1
             if (amount1 < 0) TransferHelper.safeTransfer(token1, recipient, uint256(-amount1));
 
@@ -787,7 +787,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
             //扣除用户需要支付的token0
             IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, data);
             require(balance0Before.add(uint256(amount0)) <= balance0(), 'IIA');
-        } else {//tick向右移动 代表价格上升
+        } else {//tick向左移动 代表价格下升
             // 向用户支付token0
             if (amount0 < 0) TransferHelper.safeTransfer(token0, recipient, uint256(-amount0));
 
