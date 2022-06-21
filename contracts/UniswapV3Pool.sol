@@ -94,7 +94,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     mapping(int16 => uint256) public override tickBitmap;
     /// postion映射
     mapping(bytes32 => Position.Info) public override positions;
-    /// oracle映射
+    /// 最大可以存储65535个历史价格信息
     Oracle.Observation[65535] public override observations;
 
     /// @dev Mutually exclusive reentrancy protection into the pool to/from a method. This method also prevents entrance
