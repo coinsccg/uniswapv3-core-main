@@ -64,7 +64,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         uint16 observationCardinality;
         // 可用oracle的数量
         uint16 observationCardinalityNext;
-        // 当前协议费用占取款时的掉期费用的百分比，表示为整数分母 (1/x)%
+        // 交易手续费 用(1/x)%表示
         uint8 feeProtocol;
         // 池子是否锁定
         bool unlocked;
@@ -82,7 +82,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         uint128 token0;
         uint128 token1;
     }
-    /// 协议费用
+    /// 项目方收取协议费用
     ProtocolFees public override protocolFees;
 
     /// 流动性数量
@@ -551,11 +551,11 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         uint128 liquidityStart;
         // 当前时间戳
         uint32 blockTimestamp;
-        // 刻度累加器的当前值，仅当我们越过初始化刻度时计算
+        // tick index的累加值
         int56 tickCumulative;
-        // 每个流动性累加器的当前秒数，仅当我们越过初始化的刻度时计算
+        // 单位流动性参与时长
         uint160 secondsPerLiquidityCumulativeX128;
-        //我们是否计算并缓存了上述两个累加器
+        //我们是否计算并缓存了上述两个累计值
         bool computedLatestObservation;
     }
 
