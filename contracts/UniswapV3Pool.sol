@@ -38,19 +38,19 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     using Position for Position.Info;
     using Oracle for Oracle.Observation[65535];
 
-    /// @inheritdoc IUniswapV3PoolImmutables
+    // 工厂合约地址
     address public immutable override factory;
-    /// @inheritdoc IUniswapV3PoolImmutables
+    // token0地址
     address public immutable override token0;
-    /// @inheritdoc IUniswapV3PoolImmutables
+    // token1地址
     address public immutable override token1;
-    /// @inheritdoc IUniswapV3PoolImmutables
+    // 池子手续费
     uint24 public immutable override fee;
 
-    /// @inheritdoc IUniswapV3PoolImmutables
+    // tick移动间隔
     int24 public immutable override tickSpacing;
 
-    /// @inheritdoc IUniswapV3PoolImmutables
+    // 每个刻度的最大流动性
     uint128 public immutable override maxLiquidityPerTick;
 
     struct Slot0 {
