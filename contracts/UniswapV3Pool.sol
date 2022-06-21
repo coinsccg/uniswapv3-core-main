@@ -393,7 +393,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
                     slot0.observationCardinality
                 );
 
-            // tick向做移动，价格下降？
+            // 记录tickLower
             flippedLower = ticks.update(
                 tickLower,
                 tick,
@@ -407,7 +407,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
                 maxLiquidityPerTick
             );
 
-            // tick右做移动，价格上升？
+            // 记录tickUpper
             flippedUpper = ticks.update(
                 tickUpper,
                 tick,
@@ -421,8 +421,8 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
                 maxLiquidityPerTick
             );
 
-            // 更新位图
-            if (flippedLower) {
+            // 更新位图 flippedLower为true 代表该tick的范围为第一次，因此需要更新位图
+            if (flippedLower) { 
                 tickBitmap.flipTick(tickLower, tickSpacing);
             }
             if (flippedUpper) {
