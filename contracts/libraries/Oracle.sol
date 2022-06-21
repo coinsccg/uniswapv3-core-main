@@ -115,7 +115,7 @@ library Oracle {
     ) internal returns (uint16) {
         require(current > 0, 'I');
         if (next <= current) return current;
-        // 用1进行占位初始化，避免在swap中进行初始化，可以节省swap时候的gas
+        // 用1进行占位初始化，避免在交易时更新oracle数组话费太多的gas. SSTORE 指令由 20000 降至 5000
         for (uint16 i = current; i < next; i++) self[i].blockTimestamp = 1;
         return next;
     }
