@@ -124,8 +124,8 @@ library Tick {
         uint128 liquidityGrossAfter = LiquidityMath.addDelta(liquidityGrossBefore, liquidityDelta);
 
         require(liquidityGrossAfter <= maxLiquidity, 'LO');
-
-        flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
+        // tickLower已经存在就是false 否则就是true
+        flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0); 
 
         if (liquidityGrossBefore == 0) {
             // by convention, we assume that all growth before a tick was initialized happened _below_ the tick
