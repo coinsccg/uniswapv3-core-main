@@ -245,7 +245,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
             );
     }
 
-    // 将下一次价格数据在oracle数组中占据位置进行初始化
+    // oracle数组扩容 
     function increaseObservationCardinalityNext(uint16 observationCardinalityNext)
         external
         override
@@ -253,6 +253,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         noDelegateCall
     {
         uint16 observationCardinalityNextOld = slot0.observationCardinalityNext; // for the event
+        // 进行扩容
         uint16 observationCardinalityNextNew =
             observations.grow(observationCardinalityNextOld, observationCardinalityNext);
         slot0.observationCardinalityNext = observationCardinalityNextNew;
@@ -265,7 +266,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         require(slot0.sqrtPriceX96 == 0, 'AI');
         ///根据价格获取tick   log√1.0001 * √P == tick index
         int24 tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
-        // 初始化oracle
+        // 初始化oracle数组 默认只记录最新一次数据 第三方开发者可调用increaseObservationCardinalityNext进行扩容，这样gas费又第三方承担而不是swap的用户
         (uint16 cardinality, uint16 cardinalityNext) = observations.initialize(_blockTimestamp());
 
         slot0 = Slot0({
