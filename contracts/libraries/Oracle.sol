@@ -33,11 +33,14 @@ library Oracle {
         int24 tick,
         uint128 liquidity
     ) private pure returns (Observation memory) {
+        // 上次 Oracle 数据和本次的时间差
         uint32 delta = blockTimestamp - last.blockTimestamp;
         return
             Observation({
                 blockTimestamp: blockTimestamp,
+                // 计算 tick index 的时间加权累积值
                 tickCumulative: last.tickCumulative + int56(tick) * delta,
+                // 计算时间加权累积值
                 secondsPerLiquidityCumulativeX128: last.secondsPerLiquidityCumulativeX128 +
                     ((uint160(delta) << 128) / (liquidity > 0 ? liquidity : 1)),
                 initialized: true
@@ -86,10 +89,10 @@ library Oracle {
     ) internal returns (uint16 indexUpdated, uint16 cardinalityUpdated) {
         Observation memory last = self[index];
 
-        // early return if we've already written an observation this block
+        // 同一个区块只写一次
         if (last.blockTimestamp == blockTimestamp) return (index, cardinality);
 
-        // if the conditions are right, we can bump the cardinality
+        // // 检查是否需要使用新的数组空间
         if (cardinalityNext > cardinality && index == (cardinality - 1)) {
             cardinalityUpdated = cardinalityNext;
         } else {
@@ -111,10 +114,8 @@ library Oracle {
         uint16 next
     ) internal returns (uint16) {
         require(current > 0, 'I');
-        // no-op if the passed next value isn't greater than the current next value
         if (next <= current) return current;
-        // store in each slot to prevent fresh SSTOREs in swaps
-        // this data will not be used because the initialized boolean is still false
+        // 用1进行占位初始化，避免在swap中进行初始化，可以节省swap时候的gas
         for (uint16 i = current; i < next; i++) self[i].blockTimestamp = 1;
         return next;
     }
