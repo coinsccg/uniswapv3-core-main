@@ -58,11 +58,11 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         uint160 sqrtPriceX96;
         // 当前价格刻度（价格对应的index）
         int24 tick;
-        // 最新oracle在Oracle数组中的索引位置
+        // 最新价格在Oracle数组中的索引位置
         uint16 observationIndex;
-        // 最新存储的Oracle数量
+        // 最新价格数据占据oracle数组中的长度
         uint16 observationCardinality;
-        // 下一次存储的oracle数量
+        // 下一次价格数据占据oracle数组中的长度
         uint16 observationCardinalityNext;
         // 当前协议费用占取款时的掉期费用的百分比，表示为整数分母 (1/x)%
         uint8 feeProtocol;
@@ -97,9 +97,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     /// 最大可以存储65535个历史价格信息
     Oracle.Observation[65535] public override observations;
 
-    /// @dev Mutually exclusive reentrancy protection into the pool to/from a method. This method also prevents entrance
-    /// to a function before the pool is initialized. The reentrancy guard is required throughout the contract because
-    /// we use balance checks to determine the payment status of interactions such as mint, swap and flash.
+    //防止重入
     modifier lock() {
         require(slot0.unlocked, 'LOK');
         slot0.unlocked = false;
@@ -107,7 +105,6 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         slot0.unlocked = true;
     }
 
-    /// @dev Prevents calling a function from anyone except the address returned by IUniswapV3Factory#owner()
     modifier onlyFactoryOwner() {
         require(msg.sender == IUniswapV3Factory(factory).owner());
         _;
@@ -123,21 +120,19 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(_tickSpacing);
     }
 
-    /// @dev Common checks for valid tick inputs.
+    // 检查tick范围
     function checkTicks(int24 tickLower, int24 tickUpper) private pure {
         require(tickLower < tickUpper, 'TLU');
         require(tickLower >= TickMath.MIN_TICK, 'TLM');
         require(tickUpper <= TickMath.MAX_TICK, 'TUM');
     }
 
-    /// @dev Returns the block timestamp truncated to 32 bits, i.e. mod 2**32. This method is overridden in tests.
+    // 返回时间戳的32位
     function _blockTimestamp() internal view virtual returns (uint32) {
         return uint32(block.timestamp); // truncation is desired
     }
 
-    /// @dev Get the pool's balance of token0
-    /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
-    /// check
+    // 查询token0余额
     function balance0() private view returns (uint256) {
         (bool success, bytes memory data) =
             token0.staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this)));
@@ -145,9 +140,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         return abi.decode(data, (uint256));
     }
 
-    /// @dev Get the pool's balance of token1
-    /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
-    /// check
+    // 查询token1余额
     function balance1() private view returns (uint256) {
         (bool success, bytes memory data) =
             token1.staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this)));
@@ -155,7 +148,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         return abi.decode(data, (uint256));
     }
 
-    /// @inheritdoc IUniswapV3PoolDerivedState
+    // 快照tick范围内累计手续费
     function snapshotCumulativesInside(int24 tickLower, int24 tickUpper)
         external
         view
@@ -233,7 +226,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         }
     }
 
-    /// @inheritdoc IUniswapV3PoolDerivedState
+    // 计算tick在全局中的每单位流动性参与时长
     function observe(uint32[] calldata secondsAgos)
         external
         view
@@ -252,7 +245,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
             );
     }
 
-    /// @inheritdoc IUniswapV3PoolActions
+    // 将下一次价格数据在oracle数组中占据位置进行初始化
     function increaseObservationCardinalityNext(uint16 observationCardinalityNext)
         external
         override
@@ -267,9 +260,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
             emit IncreaseObservationCardinalityNext(observationCardinalityNextOld, observationCardinalityNextNew);
     }
 
-    /// @inheritdoc IUniswapV3PoolActions
-    /// @dev not locked because it initializes unlocked
-    //流动池初始化
+    // 流动池初始化
     function initialize(uint160 sqrtPriceX96) external override {
         require(slot0.sqrtPriceX96 == 0, 'AI');
         ///根据价格获取tick   log√1.0001 * √P == tick index
@@ -300,11 +291,6 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         int128 liquidityDelta;
     }
 
-    /// @dev Effect some changes to a position
-    /// @param params the position details and the change to the position's liquidity to effect
-    /// @return position a storage pointer referencing the position with the given owner and tick range
-    /// @return amount0 the amount of token0 owed to the pool, negative if the pool should pay the recipient
-    /// @return amount1 the amount of token1 owed to the pool, negative if the pool should pay the recipient
     // 更新Position
     function _modifyPosition(ModifyPositionParams memory params)
         private
@@ -376,12 +362,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         }
     }
 
-    /// @dev Gets and updates a position with the given liquidity delta
-    /// @param owner the owner of the position
-    /// @param tickLower the lower tick of the position's tick range
-    /// @param tickUpper the upper tick of the position's tick range
-    /// @param tick the current tick, passed to avoid sloads
-    // 更新postion
+    // 获取并更新具有给定流动性增量的position
     function _updatePosition(
         address owner,
         int24 tickLower,
@@ -400,6 +381,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         // 流动性发生变化 
         if (liquidityDelta != 0) {
             uint32 time = _blockTimestamp();
+            // 计算tick index的累加值和tick index在全局单位流动性参与时长
             (int56 tickCumulative, uint160 secondsPerLiquidityCumulativeX128) =
                 observations.observeSingle(
                     time,
@@ -410,6 +392,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
                     slot0.observationCardinality
                 );
 
+            // tick向做移动，价格下降？
             flippedLower = ticks.update(
                 tickLower,
                 tick,
@@ -422,6 +405,8 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
                 false,
                 maxLiquidityPerTick
             );
+
+            // tick右做移动，价格上升？
             flippedUpper = ticks.update(
                 tickUpper,
                 tick,
@@ -528,8 +513,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         emit Collect(msg.sender, recipient, tickLower, tickUpper, amount0, amount1);
     }
 
-    /// @inheritdoc IUniswapV3PoolActions
-    /// @dev noDelegateCall is applied indirectly via _modifyPosition
+    // 销毁流动性
     function burn(
         int24 tickLower,
         int24 tickUpper,
@@ -609,7 +593,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         uint256 feeAmount;
     }
 
-    /// @inheritdoc IUniswapV3PoolActions
+    // 代币交换
     function swap(
         address recipient,
         bool zeroForOne,
